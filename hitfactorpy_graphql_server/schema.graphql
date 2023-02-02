@@ -1,0 +1,96 @@
+enum Classification {
+    GM
+    M
+    A
+    B
+    C
+    D
+    U
+    UNKNOWN
+}
+
+enum PowerFactor {
+    MAJOR
+    MINOR
+    UNKNOWN
+}
+
+enum Division {
+    PCC
+    OPEN
+    LIMITED
+    CARRY_OPTICS
+    LIMITED_10
+    PRODUCTION
+    SINGLE_STACK
+    REVOLVER
+    UNKNOWN
+}
+
+enum Scoring {
+    COMSTOCK
+    VIRGINIA
+    FIXED_TIME
+    CHRONO
+    UNKNOWN
+}
+
+enum MatchLevel {
+    I
+    II
+    III
+    IV
+}
+
+type ParsedMatchReport {
+    name: String
+    matchLevel: MatchLevel
+}
+
+type ParsedMatchReportCompetitor {
+    firstName: String
+    lastName: String
+    dq: Boolean
+    reentry: Boolean
+}
+
+type ParsedMatchReportStage {
+    match: ParsedMatchReport!
+    name: String
+    minRounds: Int!
+    maxPoints: Int!
+    classifier: Boolean!
+    classifierNumber: String
+    stageNumber: Int
+}
+
+type parsedMatchReportResult {
+    data: ParsedMatchReport
+    success: Boolean!
+    errors: [String]
+}
+
+type parsedMatchReportsResult {
+    data: [ParsedMatchReport]
+    success: Boolean!
+    errors: [String]
+}
+
+type Query {
+    parsedMatchReport(reportId: String!): parsedMatchReportResult
+    parsedMatchReports: parsedMatchReportsResult
+}
+
+type Mutation {
+    updateParsedMatchReport(reportId: String!): parsedMatchReportResult
+}
+
+type Subscription {
+    parsedMatchReport(reportId: String!): ParsedMatchReport
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}

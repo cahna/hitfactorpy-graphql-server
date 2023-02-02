@@ -1,0 +1,33 @@
+repos:
+ - repo: https://github.com/pre-commit/mirrors-mypy
+   rev: v0.991
+   hooks:
+     - id: mypy
+       files: ^(hitfactorpy_graphql_server/|tests/)
+       additional_dependencies:
+        - "sqlalchemy[mypy]>=1.4,<2.0"
+        - "sqlalchemy-continuum>=1.3.14"
+ - repo: local
+   hooks:
+     - id: black
+       name: black
+       entry: black
+       language: system
+       types: [ python ]
+       files: ^(hitfactorpy_graphql_server/|tests/)
+
+     - id: isort
+       name: isort
+       entry: isort
+       language: system
+       types: [ python ]
+       include: ^(hitfactorpy_graphql_server/|tests/)
+       exclude: '.*/migrations/.*'
+      
+     - id: flake8
+       name: flake8
+       entry: flake8
+       language: system
+       types: [ python ]
+       files: ^(hitfactorpy_graphql_server/|tests/)
+

@@ -1,0 +1,29 @@
+# Python
+.mypy_cache
+.pytest_cache
+**/__pycache__
+.vscode/.ropeproject
+.tox
+.python-version
+dist/
+
+# Misc files
+*.out
+*.gz
+*.aux
+*.pdf
+*.log
+*.swp
+*.dat
+*.png
+*.prof
+
+# Test artifacts
+.coverage
+coverage.xml
+
+# mkdocs output
+site/
+
+# Project-specific temp files
+.hitfactorpy_graphql_server_cache
