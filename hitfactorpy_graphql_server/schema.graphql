@@ -43,18 +43,29 @@ enum MatchLevel {
 }
 
 type ParsedMatchReport {
+    id: String!
     name: String
     matchLevel: MatchLevel
+    competitors: [ParsedMatchReportCompetitor]
+    stages: [ParsedMatchReportStage]
 }
 
 type ParsedMatchReportCompetitor {
+    id: String!
+    match: ParsedMatchReport!
+    memberNumber: String
     firstName: String
     lastName: String
+    division: Division
+    classification: Classification
+    powerFactor: PowerFactor
     dq: Boolean
     reentry: Boolean
+    stageScores: [ParsedMatchReportStageScore]
 }
 
 type ParsedMatchReportStage {
+    id: String!
     match: ParsedMatchReport!
     name: String
     minRounds: Int!
@@ -62,6 +73,20 @@ type ParsedMatchReportStage {
     classifier: Boolean!
     classifierNumber: String
     stageNumber: Int
+}
+
+type ParsedMatchReportStageScore {
+    id: String!
+    match: ParsedMatchReport!
+    stage: ParsedMatchReportStage!
+    competitor: ParsedMatchReportCompetitor!
+    a: Int!
+    c: Int!
+    d: Int!
+    m: Int!
+    npm: Int!
+    ns: Int!
+    procedural: Int!
 }
 
 type parsedMatchReportResult {
