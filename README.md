@@ -8,5 +8,5 @@ GraphQL API for managing match reports.
 
 ```console
 $ poetry install
-$ uvicorn hitfactorpy_graphql_server.app:app --reload
+$ uvicorn hitfactorpy_graphql_server.app:make_app --factory --reload
 ```

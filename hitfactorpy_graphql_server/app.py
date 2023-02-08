@@ -1,37 +1,45 @@
-from ariadne.asgi import GraphQL
-from ariadne.constants import PLAYGROUND_HTML
+from fastapi import Depends, FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession
+from strawberry.fastapi import BaseContext, GraphQLRouter
 
-from fastapi import FastAPI
 
-from .graphql import make_schema
+async def get_db():
+    from hitfactorpy_sqlalchemy.session import get_sqlalchemy_url, make_async_session
+
+    SessionLocal = make_async_session(get_sqlalchemy_url(scheme="postgresql+asyncpg"))
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        await db.close()
+
+
+class HitFactorRequestContext(BaseContext):
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+
+async def hit_factor_request_context_dependency(db=Depends(get_db)) -> HitFactorRequestContext:
+    return HitFactorRequestContext(db=db)
+
+
+async def get_context(
+    context=Depends(hit_factor_request_context_dependency),
+):
+    return context
+
 
 def make_app():
     from . import __version__ as app_version
+    from .schema import schema
+
     app = FastAPI(
         title="HitFactor API",
         description="Manage practical match reports with GraphQL",
         version=app_version,
     )
 
-    # @app.on_event("startup")
-    # async def startup():
-    #     await data.database.connect()
-
-
-    # @app.on_event("shutdown")
-    # async def shutdown():
-    #     await data.database.disconnect()
-
-    schema = make_schema()
-
-    # graphql_app = GraphQL(schema, debug=True)
-    # app.mount("/", graphql_app)
-
-    @app.get("/graphql")
-    async def graphql_ide():
-        return PLAYGROUND_HTML
-
-    @app.route("/graphql", methods=["POST"])
-    def graphql_ide():
+    graphql_app = GraphQLRouter(schema, context_getter=get_context)
+    app.include_router(graphql_app, prefix="/graphql")
 
     return app
