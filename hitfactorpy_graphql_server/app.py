@@ -7,11 +7,12 @@ async def get_db():
     from hitfactorpy_sqlalchemy.session import get_sqlalchemy_url, make_async_session
 
     SessionLocal = make_async_session(get_sqlalchemy_url(scheme="postgresql+asyncpg"))
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        await db.close()
+    async with SessionLocal() as session:
+        async with session.begin():
+            try:
+                yield session
+            finally:
+                await session.close()
 
 
 class HitFactorRequestContext(BaseContext):

@@ -1,13 +1,29 @@
 from datetime import datetime
 from uuid import UUID
 
+import inflection
 import strawberry
 from hitfactorpy import enums
 from hitfactorpy_sqlalchemy.orm import models
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.inspection import inspect
+from sqlalchemy.orm import load_only, selectinload
 from strawberry.types import Info
+
+
+def get_only_selected_fields(db_baseclass_name, info):
+    db_relations_fields = inspect(db_baseclass_name).relationships.keys()
+    selected_fields = [
+        inflection.underscore(field.name)
+        for field in info.selected_fields[0].selections
+        if field.name not in db_relations_fields
+    ]
+    import pdb
+
+    pdb.set_trace()
+    return selected_fields
+
 
 Division = strawberry.enum(enums.Division)  # type: ignore
 Classification = strawberry.enum(enums.Classification)  # type: ignore
@@ -22,6 +38,8 @@ class ParsedMatchReport:
     date: datetime
     match_level: MatchLevel
     competitors: list["ParsedMatchReportCompetitor"]
+    stages: list["ParsedMatchReportStage"]
+    stage_scores: list["ParsedMatchReportStageScore"]
 
 
 @strawberry.type
@@ -76,7 +94,11 @@ class ParsedMatchReportStageScore:
 async def get_db_parsed_match_report_async(db: AsyncSession, id: UUID) -> ParsedMatchReport:
     stmt = (
         select(models.MatchReport)
-        .options(selectinload(models.MatchReport.competitors))
+        .options(
+            selectinload(models.MatchReport.competitors),
+            selectinload(models.MatchReport.stages),
+            selectinload(models.MatchReport.stage_scores),
+        )
         .filter(models.MatchReport.uuid == id)
     )
     result = await db.execute(stmt)
@@ -93,11 +115,33 @@ async def get_db_parsed_match_reports_async(
     return reports
 
 
+def get_query_statement(db_baseclass_name, info):
+    db_relations_fields = inspect(db_baseclass_name).relationships.keys()
+    selected_scalars = []
+    selected_relationships = []
+    for field in info.selected_fields[0].selections:
+        if field.name in db_relations_fields:
+            selected_relationships.append(inflection.underscore(field.name))
+        else:
+            selected_scalars.append(inflection.underscore(field.name))
+
+    stmt = select(db_baseclass_name)
+    if selected_scalars:
+        stmt = stmt.options(load_only(*selected_scalars))
+    if selected_relationships:
+        for relation_field in selected_relationships:
+            stmt = stmt.options(selectinload(relation_field))
+
+    return stmt
+
+
 @strawberry.type
 class Query:
     @strawberry.field
     async def parsed_match_reports(self, info: Info) -> list[ParsedMatchReport]:
-        return await get_db_parsed_match_reports_async(info.context.db)
+        stmt = get_query_statement(models.MatchReport, info)
+        result = await info.context.db.execute(stmt)
+        return result.scalars().all()  # type: ignore
 
     @strawberry.field
     async def parsed_match_report(self, id: UUID, info: Info) -> ParsedMatchReport:
