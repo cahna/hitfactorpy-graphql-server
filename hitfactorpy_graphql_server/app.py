@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession
-from strawberry.fastapi import BaseContext, GraphQLRouter
+from strawberry.fastapi import GraphQLRouter
+
+from .strawberry_context import HitFactorRequestContext
 
 
 async def get_db():
@@ -11,13 +12,10 @@ async def get_db():
         async with session.begin():
             try:
                 yield session
+            except:  # noqa: E722
+                await session.rollback()
             finally:
                 await session.close()
-
-
-class HitFactorRequestContext(BaseContext):
-    def __init__(self, db: AsyncSession):
-        self.db = db
 
 
 async def hit_factor_request_context_dependency(db=Depends(get_db)) -> HitFactorRequestContext:

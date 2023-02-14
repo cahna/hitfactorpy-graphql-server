@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 import inflection
@@ -9,7 +10,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import load_only, selectinload
+from strawberry.dataloader import DataLoader
 from strawberry.types import Info
+
+from .strawberry_context import HitFactorRequestContext
 
 
 def get_only_selected_fields(db_baseclass_name, info):
@@ -115,15 +119,16 @@ async def get_db_parsed_match_reports_async(
     return reports
 
 
-def get_query_statement(db_baseclass_name, info):
+def get_query_statement(db_baseclass_name, info: Info[HitFactorRequestContext, Any]):
     db_relations_fields = inspect(db_baseclass_name).relationships.keys()
     selected_scalars = []
     selected_relationships = []
     for field in info.selected_fields[0].selections:
-        if field.name in db_relations_fields:
-            selected_relationships.append(inflection.underscore(field.name))
+        field_name = inflection.underscore(field.name)  # type: ignore
+        if field_name in db_relations_fields:
+            selected_relationships.append(field_name)
         else:
-            selected_scalars.append(inflection.underscore(field.name))
+            selected_scalars.append(field_name)
 
     stmt = select(db_baseclass_name)
     if selected_scalars:
@@ -138,13 +143,16 @@ def get_query_statement(db_baseclass_name, info):
 @strawberry.type
 class Query:
     @strawberry.field
-    async def parsed_match_reports(self, info: Info) -> list[ParsedMatchReport]:
+    async def parsed_match_reports(self, info: Info[HitFactorRequestContext, Any]) -> list[ParsedMatchReport]:
+        import pdb
+
+        pdb.set_trace
         stmt = get_query_statement(models.MatchReport, info)
         result = await info.context.db.execute(stmt)
         return result.scalars().all()  # type: ignore
 
     @strawberry.field
-    async def parsed_match_report(self, id: UUID, info: Info) -> ParsedMatchReport:
+    async def parsed_match_report(self, id: UUID, info: Info[HitFactorRequestContext, Any]) -> ParsedMatchReport:
         return await get_db_parsed_match_report_async(info.context.db, id)
 
 
