@@ -3,10 +3,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.inspection import inspect
 
-# from sqlalchemy.orm import load_only, selectinload
+from sqlalchemy.orm import load_only
 from strawberry.dataloader import DataLoader
 
-MATCH_REPORT_RELATIONS_FIELDS = inspect(models.MatchReport).relationships.keys()
+_MATCH_REPORT = inspect(models.MatchReport)
+_MATCH_REPORT_RELATIONS_FIELDS = _MATCH_REPORT.relationships.keys()
+_MATCH_REPORT_COLUMNS_FIELDS = _MATCH_REPORT.columns.keys()
 
 
 def make_match_report_loader(db: AsyncSession) -> DataLoader:

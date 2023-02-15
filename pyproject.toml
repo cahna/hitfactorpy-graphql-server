@@ -3,6 +3,7 @@ name = "hitfactorpy_graphql_server"
 version = "0.0.1"
 description = "Manage practical match reports with SQLAlchemy"
 repository = "https://github.com/cahna/hitfactorpy-graphql-server"
+documentation = "https://cahna.github.io/hitfactorpy-graphql-server/"
 authors = ["Conor Heine <conor.heine@gmail.com>"]
 readme = "README.md"
 classifiers = [

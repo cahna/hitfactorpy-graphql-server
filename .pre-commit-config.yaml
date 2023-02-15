@@ -8,6 +8,10 @@ repos:
         - "sqlalchemy[mypy]>=1.4,<2.0"
         - "sqlalchemy-continuum>=1.3.14"
         - "strawberry-graphql>=^0.155.4"
+ - repo: https://github.com/PyCQA/autoflake
+   rev: v2.0.1
+   hooks:
+    - id: autoflake
  - repo: local
    hooks:
      - id: black
