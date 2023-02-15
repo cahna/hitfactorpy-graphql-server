@@ -1,7 +1,8 @@
 [tool.poetry]
 name = "hitfactorpy_graphql_server"
-version = "0.0.3"
+version = "0.0.1"
 description = "Manage practical match reports with SQLAlchemy"
+repository = "https://github.com/cahna/hitfactorpy-graphql-server"
 authors = ["Conor Heine <conor.heine@gmail.com>"]
 readme = "README.md"
 classifiers = [
@@ -28,7 +29,7 @@ hitfactorpy = "^0.1.1"
 uvicorn = {version = "^0.20.0", extras = ["standard"]}
 fastapi = "^0.90.0"
 strawberry-graphql = {version = "^0.155.4", extras = ["debug-server", "fastapi"]}
-hitfactorpy-sqlalchemy = "^0.0.4"
+hitfactorpy-sqlalchemy = "^0.0.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.0"
