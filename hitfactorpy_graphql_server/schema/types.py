@@ -4,8 +4,6 @@ from uuid import UUID
 
 import strawberry
 from hitfactorpy import enums
-from hitfactorpy_sqlalchemy.orm import models
-from sqlalchemy import select
 from strawberry.types import Info
 
 from .context import HitFactorRequestContext
@@ -25,37 +23,19 @@ class ParsedMatchReport:
 
     @strawberry.field
     async def competitors(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportCompetitor"]:
-        stmt = (
-            select(models.MatchReportCompetitor.id)
-            .select_from(models.MatchReportCompetitor)
-            .filter(models.MatchReportCompetitor.match_id == self.id)
-        )
-        result = await info.context.db.execute(stmt)
-        competitor_ids: list[UUID] = result.scalars().all()
+        competitor_ids = await info.context.data_loaders.fk_competitors_for_match.load(self.id)
         return cast(
             list["ParsedMatchReportCompetitor"], await info.context.data_loaders.competitors.load_many(competitor_ids)
         )
 
     @strawberry.field
     async def stages(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportStage"]:
-        stmt = (
-            select(models.MatchReportStage.id)
-            .select_from(models.MatchReportStage)
-            .filter(models.MatchReportStage.match_id == self.id)
-        )
-        result = await info.context.db.execute(stmt)
-        stage_ids: list[UUID] = result.scalars().all()
+        stage_ids = await info.context.data_loaders.fk_stages_for_match.load(self.id)
         return cast(list["ParsedMatchReportStage"], await info.context.data_loaders.stages.load_many(stage_ids))
 
     @strawberry.field
     async def stage_scores(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportStageScore"]:
-        stmt = (
-            select(models.MatchReportStageScore.id)
-            .select_from(models.MatchReportStageScore)
-            .filter(models.MatchReportStageScore.match_id == self.id)
-        )
-        result = await info.context.db.execute(stmt)
-        stage_score_ids: list[UUID] = result.scalars().all()
+        stage_score_ids = await info.context.data_loaders.fk_stage_scores_for_match.load(self.id)
         return cast(
             list["ParsedMatchReportStageScore"], await info.context.data_loaders.stage_scores.load_many(stage_score_ids)
         )
@@ -80,15 +60,10 @@ class ParsedMatchReportCompetitor:
 
     @strawberry.field
     async def stage_scores(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportStageScore"]:
-        stmt = (
-            select(models.MatchReportStageScore.id)
-            .select_from(models.MatchReportStageScore)
-            .filter(models.MatchReportStageScore.competitor_id == self.id)
-        )
-        result = await info.context.db.execute(stmt)
-        stage_score_ids: list[UUID] = result.scalars().all()
+        competitor_score_ids = await info.context.data_loaders.fk_stage_scores_for_competitor.load(self.id)
         return cast(
-            list["ParsedMatchReportStageScore"], await info.context.data_loaders.stage_scores.load_many(stage_score_ids)
+            list["ParsedMatchReportStageScore"],
+            await info.context.data_loaders.stage_scores.load_many(competitor_score_ids),
         )
 
 
@@ -109,13 +84,7 @@ class ParsedMatchReportStage:
 
     @strawberry.field
     async def stage_scores(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportStageScore"]:
-        stmt = (
-            select(models.MatchReportStageScore.id)
-            .select_from(models.MatchReportStageScore)
-            .filter(models.MatchReportStageScore.stage_id == self.id)
-        )
-        result = await info.context.db.execute(stmt)
-        stage_score_ids: list[UUID] = result.scalars().all()
+        stage_score_ids = await info.context.data_loaders.fk_stage_scores_for_stage.load(self.id)
         return cast(
             list["ParsedMatchReportStageScore"], await info.context.data_loaders.stage_scores.load_many(stage_score_ids)
         )
