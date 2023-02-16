@@ -24,7 +24,7 @@ def get_selection_info(model_klass, info: Info) -> SelectionInfo:
             selected_relationships.append(field_name)
         else:
             selected_columns.append(field_name)
-    breakpoint()
+
     return SelectionInfo(selected_columns, selected_relationships)
 
 
