@@ -996,14 +996,14 @@ typer = {version = ">=0.7.0,<0.8.0", extras = ["all"]}
 
 [[package]]
 name = "hitfactorpy-sqlalchemy"
-version = "0.0.7"
+version = "0.0.8"
 description = "Manage practical match reports with SQLAlchemy"
 category = "main"
 optional = false
 python-versions = ">=3.10,<3.12"
 files = [
-    {file = "hitfactorpy_sqlalchemy-0.0.7-py3-none-any.whl", hash = "sha256:6b27f9e5be78aaf0641028e971a9e86259e3073b96c167b8d55517ee2a5300f9"},
-    {file = "hitfactorpy_sqlalchemy-0.0.7.tar.gz", hash = "sha256:34ddbfb7dcddae8a2abbccb2873cc483ed95cce6c0749af2d6a5038529f68ac3"},
+    {file = "hitfactorpy_sqlalchemy-0.0.8-py3-none-any.whl", hash = "sha256:56e85dc0f6b82420026bcdea761d15efdcab8a7ecaaaef3f44aba3b1ccf80132"},
+    {file = "hitfactorpy_sqlalchemy-0.0.8.tar.gz", hash = "sha256:8891b912674e0ce1d89634bd27835462b5b7899c18654af1c3f2c2e0b0bd604e"},
 ]
 
 [package.dependencies]
@@ -3041,4 +3041,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10,<3.12"
-content-hash = "d40336a4518c1beb3528f7c8704cfa68622d9ff1a2197a51feabfebe2010972c"
+content-hash = "a31f9ddf3a238527e6660317711a4a393163b29242766d28ae91b656fc33fac3"
