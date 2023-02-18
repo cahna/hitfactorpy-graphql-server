@@ -10,31 +10,37 @@ from .schema.context import HitFactorRequestContext
 
 
 class SelectionInfo(NamedTuple):
-    selected_columns: list[str]
-    selected_relationships: list[str]
+    columns: list[str]
+    relationships: list[str]
+    unknown: list[str]
 
 
 def get_selection_info(model_klass, info: Info) -> SelectionInfo:
-    db_relations_fields = inspect(model_klass).relationships.keys()
+    mk = inspect(model_klass)
+    db_relations_fields = mk.relationships.keys()
+    db_columns_fields = mk.columns.keys()
     selected_columns = []
     selected_relationships = []
+    selected_unknown = []
     for field in info.selected_fields[0].selections:
         field_name = inflection.underscore(field.name)  # type: ignore
         if field_name in db_relations_fields:
             selected_relationships.append(field_name)
-        else:
+        elif field_name in db_columns_fields:
             selected_columns.append(field_name)
+        else:
+            selected_unknown.append(field_name)
 
-    return SelectionInfo(selected_columns, selected_relationships)
+    return SelectionInfo(selected_columns, selected_relationships, selected_unknown)
 
 
 def get_query_statement(db_baseclass_name, info: Info[HitFactorRequestContext, Any]):
     selection_info = get_selection_info(db_baseclass_name, info)
     stmt = select(db_baseclass_name)
-    if selection_info.selected_columns:
-        stmt = stmt.options(load_only(*selection_info.selected_columns))
-    if selection_info.selected_relationships:
-        for relation_field in selection_info.selected_relationships:
+    if selection_info.columns:
+        stmt = stmt.options(load_only(*selection_info.columns))
+    if selection_info.relationships:
+        for relation_field in selection_info.relationships:
             stmt = stmt.options(selectinload(relation_field))
 
     return stmt

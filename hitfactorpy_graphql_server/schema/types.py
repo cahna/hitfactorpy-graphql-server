@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Any, cast
 from uuid import UUID
 
@@ -13,6 +13,33 @@ Division = strawberry.enum(enums.Division)  # type: ignore
 Classification = strawberry.enum(enums.Classification)  # type: ignore
 MatchLevel = strawberry.enum(enums.MatchLevel)  # type: ignore
 PowerFactor = strawberry.enum(enums.PowerFactor)  # type: ignore
+
+
+@strawberry.type
+class CompetitorSummary:
+    id: UUID
+    member_number: str | None
+
+
+@strawberry.type
+class StageSummary:
+    id: UUID
+    name: str | None
+
+
+@strawberry.type
+class ParsedMatchReportSummary:
+    id: strawberry.ID
+    name: str | None
+    date: date | None
+    created: datetime | None
+    updated: datetime | None
+    match_level: MatchLevel | None
+    competitor_count: int
+    competitor_ids: list[CompetitorSummary]
+    stage_count: int
+    stage_ids: list[StageSummary]
+    stage_score_count: int
 
 
 @strawberry.type

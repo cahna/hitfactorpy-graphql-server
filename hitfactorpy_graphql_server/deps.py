@@ -6,7 +6,7 @@ from .schema.context import HitFactorDataLoaders, HitFactorRequestContext
 async def session_provider():
     from hitfactorpy_sqlalchemy.session import get_sqlalchemy_url, make_async_session
 
-    SessionLocal = make_async_session(get_sqlalchemy_url(scheme="postgresql+asyncpg"))
+    SessionLocal = make_async_session(get_sqlalchemy_url(scheme="postgresql+asyncpg"), echo=True)
     async with SessionLocal() as session:
         async with session.begin():
             try:
