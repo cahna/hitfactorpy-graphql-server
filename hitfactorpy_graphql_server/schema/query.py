@@ -3,14 +3,13 @@ from uuid import UUID
 
 import strawberry
 from hitfactorpy_sqlalchemy.orm import models
-from sqlalchemy import select
-from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy_utils.functions import is_loaded
 from strawberry.types import Info
 
-from ..utils import get_query_statement, get_selection_info
+from ..actions import get_match_report_summaries
+from ..utils import get_query_statement
 from .context import HitFactorRequestContext
-from .types import CompetitorSummary, ParsedMatchReport, ParsedMatchReportSummary, StageSummary
+from .types import ParsedMatchReport, ParsedMatchReportSummary
 
 # from .relay.types import Connection, Edge, PageInfo
 # from .relay.utils import encode_cursor
@@ -28,30 +27,10 @@ class Query:
     async def parsed_match_report_summaries(
         self, info: Info[HitFactorRequestContext, Any]
     ) -> list[ParsedMatchReportSummary]:
-        stmt = (
-            select(models.MatchReport)
-            .options(selectinload(models.MatchReport.competitors).load_only("id", "member_number"))
-            .options(selectinload(models.MatchReport.stages).load_only("id", "name"))
-            .options(selectinload(models.MatchReport.stage_scores).load_only("id"))
-        )
-        result = await info.context.db.execute(stmt)
-        match_reports: list[models.MatchReport] = result.scalars().all()
-        return [
-            ParsedMatchReportSummary(
-                id=strawberry.ID(str(mr.id)),
-                name=mr.name,
-                date=mr.date,
-                created=mr.created,
-                updated=mr.updated,
-                match_level=mr.match_level,
-                competitor_count=len(mr.competitors),
-                competitor_ids=[CompetitorSummary(id=c.id, member_number=c.member_number) for c in mr.competitors],
-                stage_count=len(mr.stages),
-                stage_ids=[StageSummary(id=s.id, name=s.name) for s in mr.stages],
-                stage_score_count=len(mr.stage_scores),
-            )
-            for mr in match_reports
-        ]
+        match_report_models = await get_match_report_summaries(info.context.db)
+        match_reports = list(map(ParsedMatchReportSummary.from_orm, match_report_models))
+        info.context.data_loaders.match_report_summary.prime_many({m.id: m for m in match_reports})
+        return match_reports
 
     @strawberry.field
     async def parsed_match_reports(self, info: Info[HitFactorRequestContext, Any]) -> list[ParsedMatchReport]:

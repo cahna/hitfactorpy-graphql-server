@@ -7,12 +7,15 @@ import strawberry
 from hitfactorpy_sqlalchemy.orm import models
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import load_only, selectinload
+
+# from sqlalchemy.orm import load_only, selectinload
 from strawberry.dataloader import DataLoader
 from strawberry.fastapi import BaseContext
 
+from ..actions import get_match_report_summaries
+
 if TYPE_CHECKING:
-    from .types import ParsedMatchReportSummary
+    from .types import ParsedMatchReport, ParsedMatchReportSummary
 
 
 def make_model_loader(db, model_klass):
@@ -102,34 +105,12 @@ def make_fk_stage_scores_for_match_loader(db):
 
 
 def make_match_report_summary_loader(db: AsyncSession):
-    from .types import CompetitorSummary, ParsedMatchReportSummary, StageSummary
+    from .types import ParsedMatchReportSummary
 
     async def loader_fn(keys: list[strawberry.ID]) -> list[Union[ParsedMatchReportSummary, ValueError]]:
-        stmt = (
-            select(models.MatchReport)
-            .filter(models.MatchReport.id.in_(keys))
-            .options(selectinload(models.MatchReport.competitors).load_only("id", "member_number"))
-            .options(selectinload(models.MatchReport.stages).load_only("id", "name"))
-            .options(selectinload(models.MatchReport.stage_scores).load_only("id"))
-        )
-        result = await db.execute(stmt)
-        match_reports: list[models.MatchReport] = result.scalars().all()
-        lookup = {
-            strawberry.ID(str(m.id)): ParsedMatchReportSummary(
-                id=strawberry.ID(str(m.id)),
-                name=m.name,
-                date=m.date,
-                created=m.created,
-                updated=m.updated,
-                match_level=m.match_level,
-                competitor_count=len(m.competitors),
-                competitor_ids=[CompetitorSummary(id=c.id, member_number=c.member_number) for c in m.competitors],
-                stage_count=len(m.stages),
-                stage_ids=[StageSummary(id=s.id, name=s.name) for s in m.stages],
-                stage_score_count=len(m.stage_scores),
-            )
-            for m in match_reports
-        }
+        match_report_summary_models = await get_match_report_summaries(db, id_in=list(map(str, keys)))
+        match_report_summaries = list(map(ParsedMatchReportSummary.from_orm, match_report_summary_models))
+        lookup = {m.id: m for m in match_report_summaries}
         return [lookup.get(k, ValueError(f"no MatchReport with id={k}")) for k in keys]
 
     return loader_fn
@@ -138,6 +119,8 @@ def make_match_report_summary_loader(db: AsyncSession):
 @dataclass(frozen=True)
 class HitFactorDataLoaders:
     match_report_summary: DataLoader[strawberry.ID, "ParsedMatchReportSummary"]
+    # match_report: DataLoader[strawberry.ID, "ParsedMatchReport"]
+    # Old loaders (FIXME: returns model instead of strawberry type)
     match_reports: DataLoader[UUID, models.MatchReport]
     stages: DataLoader[UUID, models.MatchReportStage]
     competitors: DataLoader[UUID, models.MatchReportCompetitor]
@@ -152,6 +135,7 @@ class HitFactorDataLoaders:
     def build(db: AsyncSession) -> "HitFactorDataLoaders":
         return HitFactorDataLoaders(
             match_report_summary=DataLoader(load_fn=make_match_report_summary_loader(db)),
+            # match_report=DataLoader(load_fn=make_match_report_loader(db)),
             # Old loaders (FIXME: returns model instead of strawberry type)
             match_reports=DataLoader(load_fn=make_model_loader(db, models.MatchReport)),
             stages=DataLoader(load_fn=make_model_loader(db, models.MatchReportStage)),

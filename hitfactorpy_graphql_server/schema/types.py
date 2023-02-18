@@ -41,6 +41,24 @@ class ParsedMatchReportSummary:
     stage_ids: list[StageSummary]
     stage_score_count: int
 
+    @classmethod
+    def from_orm(cls, match_report: models.MatchReport):
+        return cls(
+            id=strawberry.ID(str(match_report.id)),
+            name=match_report.name,
+            date=match_report.date,
+            created=match_report.created,
+            updated=match_report.updated,
+            match_level=match_report.match_level,  # type: ignore
+            competitor_count=len(match_report.competitors),
+            competitor_ids=[
+                CompetitorSummary(id=c.id, member_number=c.member_number) for c in match_report.competitors
+            ],
+            stage_count=len(match_report.stages),
+            stage_ids=[StageSummary(id=s.id, name=s.name) for s in match_report.stages],
+            stage_score_count=len(match_report.stage_scores),
+        )
+
 
 @strawberry.type
 class ParsedMatchReport:
