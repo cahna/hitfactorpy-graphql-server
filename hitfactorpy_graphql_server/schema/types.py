@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import date
 from typing import Any, cast
 from uuid import UUID
 
 import strawberry
 from hitfactorpy import enums
+from hitfactorpy_sqlalchemy.orm import models
 from strawberry.types import Info
 
 from .context import HitFactorRequestContext
@@ -17,9 +18,9 @@ PowerFactor = strawberry.enum(enums.PowerFactor)  # type: ignore
 @strawberry.type
 class ParsedMatchReport:
     id: UUID
-    name: str
-    date: datetime
-    match_level: MatchLevel
+    name: str | None
+    date: date | None
+    match_level: MatchLevel | None
 
     @strawberry.field
     async def competitors(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportCompetitor"]:

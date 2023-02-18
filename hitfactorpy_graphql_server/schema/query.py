@@ -21,10 +21,10 @@ class Query:
         dl = info.context.data_loaders
         stmt = get_query_statement(models.MatchReport, info)
         result = await info.context.db.execute(stmt)
-        match_reports = result.scalars().all()
+        match_reports: list[models.MatchReport] = result.scalars().all()
 
         for match_report in match_reports:
-            dl.match_reports.prime(match_report.id, match_report)
+            dl.match_reports.prime(cast(UUID, match_report.id), match_report)
             if is_loaded(match_report, "competitors"):
                 for competitor in match_report.competitors:
                     dl.competitors.prime(competitor.id, competitor)
@@ -34,7 +34,6 @@ class Query:
             if is_loaded(match_report, "stage_scores"):
                 for stage_score in match_report.stage_scores:
                     dl.stage_scores.prime(stage_score.id, stage_score)
-
         return match_reports
 
     @strawberry.field
@@ -43,7 +42,7 @@ class Query:
         result = await info.context.db.execute(stmt)
         if match_report := result.scalar_one_or_none():
             info.context.data_loaders.match_reports.prime(id, match_report)
-            return cast(ParsedMatchReport, match_report)
+            return match_report  # type: ignore
         return None
 
     # @strawberry.field
