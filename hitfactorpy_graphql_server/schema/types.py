@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from typing import Any, cast
-from uuid import UUID
 
 import strawberry
 from hitfactorpy import enums
@@ -17,13 +16,13 @@ PowerFactor = strawberry.enum(enums.PowerFactor)  # type: ignore
 
 @strawberry.type
 class CompetitorSummary:
-    id: UUID
+    id: strawberry.ID
     member_number: str | None
 
 
 @strawberry.type
 class StageSummary:
-    id: UUID
+    id: strawberry.ID
     name: str | None
 
 
@@ -36,10 +35,19 @@ class ParsedMatchReportSummary:
     updated: datetime | None
     match_level: MatchLevel | None
     competitor_count: int
-    competitor_ids: list[CompetitorSummary]
+    competitor_summaries: list[CompetitorSummary]
+    competitor_ids: strawberry.Private[list[strawberry.ID]]
     stage_count: int
-    stage_ids: list[StageSummary]
-    stage_score_count: int
+    stage_summaries: list[StageSummary]
+    stage_ids: strawberry.Private[list[strawberry.ID]]
+
+    @strawberry.field
+    async def competitors(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportCompetitor"]:
+        return await info.context.data_loaders.competitor.load_many(self.competitor_ids)
+
+    @strawberry.field
+    async def stages(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportStage"]:
+        return await info.context.data_loaders.stage.load_many(self.stage_ids)
 
     @classmethod
     def from_orm(cls, match_report: models.MatchReport):
@@ -51,97 +59,97 @@ class ParsedMatchReportSummary:
             updated=match_report.updated,
             match_level=match_report.match_level,  # type: ignore
             competitor_count=len(match_report.competitors),
-            competitor_ids=[
-                CompetitorSummary(id=c.id, member_number=c.member_number) for c in match_report.competitors
+            competitor_summaries=[
+                CompetitorSummary(id=strawberry.ID(str(c.id)), member_number=c.member_number)
+                for c in match_report.competitors
             ],
+            competitor_ids=[strawberry.ID(str(c.id)) for c in match_report.competitors],
             stage_count=len(match_report.stages),
-            stage_ids=[StageSummary(id=s.id, name=s.name) for s in match_report.stages],
-            stage_score_count=len(match_report.stage_scores),
-        )
-
-
-@strawberry.type
-class ParsedMatchReport:
-    id: UUID
-    name: str | None
-    date: date | None
-    match_level: MatchLevel | None
-
-    @strawberry.field
-    async def competitors(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportCompetitor"]:
-        competitor_ids = await info.context.data_loaders.fk_competitors_for_match.load(self.id)
-        return cast(
-            list["ParsedMatchReportCompetitor"], await info.context.data_loaders.competitors.load_many(competitor_ids)
-        )
-
-    @strawberry.field
-    async def stages(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportStage"]:
-        stage_ids = await info.context.data_loaders.fk_stages_for_match.load(self.id)
-        return cast(list["ParsedMatchReportStage"], await info.context.data_loaders.stages.load_many(stage_ids))
-
-    @strawberry.field
-    async def stage_scores(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportStageScore"]:
-        stage_score_ids = await info.context.data_loaders.fk_stage_scores_for_match.load(self.id)
-        return cast(
-            list["ParsedMatchReportStageScore"], await info.context.data_loaders.stage_scores.load_many(stage_score_ids)
+            stage_summaries=[StageSummary(id=strawberry.ID(str(s.id)), name=s.name) for s in match_report.stages],
+            stage_ids=[strawberry.ID(str(s.id)) for s in match_report.stages],
         )
 
 
 @strawberry.type
 class ParsedMatchReportCompetitor:
-    id: UUID
-    match_id: strawberry.Private[UUID]
-    member_number: str
-    first_name: str
-    last_name: str
+    id: strawberry.ID
+    member_number: str | None
+    first_name: str | None
+    last_name: str | None
     division: Division
     classification: Classification
     power_factor: PowerFactor
-    dq: bool
-    reentry: bool
+    dq: bool | None
+    reentry: bool | None
+    match_id: strawberry.Private[strawberry.ID]
+    stage_score_ids: strawberry.Private[list[strawberry.ID]]
 
     @strawberry.field
-    async def match(self, info: Info[HitFactorRequestContext, Any]) -> ParsedMatchReport:
-        return cast(ParsedMatchReport, await info.context.data_loaders.match_reports.load(self.match_id))
+    async def match(self, info: Info[HitFactorRequestContext, Any]) -> ParsedMatchReportSummary:
+        return await info.context.data_loaders.match_report_summary.load(self.match_id)
 
     @strawberry.field
     async def stage_scores(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportStageScore"]:
-        competitor_score_ids = await info.context.data_loaders.fk_stage_scores_for_competitor.load(self.id)
-        return cast(
-            list["ParsedMatchReportStageScore"],
-            await info.context.data_loaders.stage_scores.load_many(competitor_score_ids),
+        return await info.context.data_loaders.stage_score.load_many(self.stage_score_ids)
+
+    @classmethod
+    def from_orm(cls, competitor: models.MatchReportCompetitor):
+        return cls(
+            id=strawberry.ID(str(competitor.id)),
+            member_number=competitor.member_number,
+            first_name=competitor.first_name,
+            last_name=competitor.last_name,
+            division=cast(Division, competitor.division),
+            classification=cast(Classification, competitor.classification),
+            power_factor=cast(PowerFactor, competitor.power_factor),
+            dq=competitor.dq,
+            reentry=competitor.reentry,
+            match_id=strawberry.ID(str(competitor.match_id)),
+            stage_score_ids=[strawberry.ID(str(stage_score.id)) for stage_score in competitor.stage_scores],
         )
 
 
 @strawberry.type
 class ParsedMatchReportStage:
-    id: UUID
-    match_id: strawberry.Private[UUID]
+    id: strawberry.ID
+    match_id: strawberry.Private[strawberry.ID]
     name: str
     min_rounds: int
     max_points: int
     classifier: bool
     classifier_number: str
     stage_number: int
+    stage_score_ids: strawberry.Private[list[strawberry.ID]]
 
     @strawberry.field
-    async def match(self, info: Info[HitFactorRequestContext, Any]) -> ParsedMatchReport:
-        return cast(ParsedMatchReport, await info.context.data_loaders.match_reports.load(self.match_id))
+    async def match(self, info: Info[HitFactorRequestContext, Any]) -> ParsedMatchReportSummary:
+        return await info.context.data_loaders.match_report_summary.load(self.match_id)
 
     @strawberry.field
     async def stage_scores(self, info: Info[HitFactorRequestContext, Any]) -> list["ParsedMatchReportStageScore"]:
-        stage_score_ids = await info.context.data_loaders.fk_stage_scores_for_stage.load(self.id)
-        return cast(
-            list["ParsedMatchReportStageScore"], await info.context.data_loaders.stage_scores.load_many(stage_score_ids)
+        return await info.context.data_loaders.stage_score.load_many(self.stage_score_ids)
+
+    @classmethod
+    def from_orm(cls, stage: models.MatchReportStage):
+        return cls(
+            id=strawberry.ID(str(stage.id)),
+            match_id=strawberry.ID(str(stage.match_id)),
+            name=cast(str, stage.name),
+            min_rounds=cast(int, stage.min_rounds),
+            max_points=cast(int, stage.max_points),
+            classifier=bool(stage.classifier),
+            classifier_number=cast(str, stage.classifier_number),
+            stage_number=cast(int, stage.stage_number),
+            stage_score_ids=[strawberry.ID(str(stage_score.id)) for stage_score in stage.stage_scores],
         )
 
 
 @strawberry.type
 class ParsedMatchReportStageScore:
-    id: UUID
-    match_id: strawberry.Private[UUID]
-    competitor_id: strawberry.Private[UUID]
-    stage_id: strawberry.Private[UUID]
+    id: strawberry.ID
+    match_id: strawberry.Private[strawberry.ID]
+    competitor_id: strawberry.Private[strawberry.ID]
+    stage_id: strawberry.Private[strawberry.ID]
     dq: bool
     dnf: bool
     a: int
@@ -157,13 +165,35 @@ class ParsedMatchReportStageScore:
     other_penalty: int
 
     @strawberry.field
-    async def match(self, info: Info[HitFactorRequestContext, Any]) -> ParsedMatchReport:
-        return cast(ParsedMatchReport, await info.context.data_loaders.match_reports.load(self.match_id))
+    async def match(self, info: Info[HitFactorRequestContext, Any]) -> ParsedMatchReportSummary:
+        return await info.context.data_loaders.match_report_summary.load(self.match_id)
 
     @strawberry.field
     async def competitor(self, info: Info[HitFactorRequestContext, Any]) -> ParsedMatchReportCompetitor:
-        return cast(ParsedMatchReportCompetitor, await info.context.data_loaders.competitors.load(self.competitor_id))
+        return await info.context.data_loaders.competitor.load(self.competitor_id)
 
     @strawberry.field
     async def stage(self, info: Info[HitFactorRequestContext, Any]) -> ParsedMatchReportStage:
-        return cast(ParsedMatchReportStage, await info.context.data_loaders.stages.load(self.stage_id))
+        return await info.context.data_loaders.stage.load(self.stage_id)
+
+    @classmethod
+    def from_orm(cls, stage_score: models.MatchReportStageScore):
+        return cls(
+            id=strawberry.ID(str(stage_score.id)),
+            match_id=strawberry.ID(str(stage_score.match_id)),
+            competitor_id=strawberry.ID(str(stage_score.competitor_id)),
+            stage_id=strawberry.ID(str(stage_score.stage_id)),
+            dq=bool(stage_score.dq),
+            dnf=bool(stage_score.dnf),
+            a=cast(int, stage_score.a),
+            c=cast(int, stage_score.c),
+            d=cast(int, stage_score.d),
+            m=cast(int, stage_score.m),
+            npm=cast(int, stage_score.npm),
+            ns=cast(int, stage_score.ns),
+            procedural=cast(int, stage_score.procedural),
+            late_shot=cast(int, stage_score.late_shot),
+            extra_shot=cast(int, stage_score.extra_shot),
+            extra_hit=cast(int, stage_score.extra_hit),
+            other_penalty=cast(int, stage_score.other_penalty),
+        )
