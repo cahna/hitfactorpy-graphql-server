@@ -19,17 +19,6 @@ if TYPE_CHECKING:
     )
 
 
-# def _make_model_loader(db, model_klass):
-#     async def loader_fn(keys):
-#         stmt = select(model_klass).filter(model_klass.id.in_(keys))
-#         result = await db.execute(stmt)
-#         models = result.scalars().all()
-#         keyed_models = {m.id: m for m in models}
-#         return [keyed_models.get(k, ValueError(f"no {model_klass.__name__} with id={k}")) for k in keys]
-
-#     return loader_fn
-
-
 def _make_match_report_summary_loader(db: AsyncSession):
     from .types import ParsedMatchReportSummary
 

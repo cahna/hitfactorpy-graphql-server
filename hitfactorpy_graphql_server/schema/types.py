@@ -50,7 +50,7 @@ class ParsedMatchReportSummary:
         return await info.context.data_loaders.stage.load_many(self.stage_ids)
 
     @classmethod
-    def from_orm(cls, match_report: models.MatchReport):
+    def from_orm(cls, match_report: models.MatchReport) -> "ParsedMatchReportSummary":
         return cls(
             id=strawberry.ID(str(match_report.id)),
             name=match_report.name,
@@ -93,7 +93,7 @@ class ParsedMatchReportCompetitor:
         return await info.context.data_loaders.stage_score.load_many(self.stage_score_ids)
 
     @classmethod
-    def from_orm(cls, competitor: models.MatchReportCompetitor):
+    def from_orm(cls, competitor: models.MatchReportCompetitor) -> "ParsedMatchReportCompetitor":
         return cls(
             id=strawberry.ID(str(competitor.id)),
             member_number=competitor.member_number,
@@ -130,7 +130,7 @@ class ParsedMatchReportStage:
         return await info.context.data_loaders.stage_score.load_many(self.stage_score_ids)
 
     @classmethod
-    def from_orm(cls, stage: models.MatchReportStage):
+    def from_orm(cls, stage: models.MatchReportStage) -> "ParsedMatchReportStage":
         return cls(
             id=strawberry.ID(str(stage.id)),
             match_id=strawberry.ID(str(stage.match_id)),
@@ -177,7 +177,7 @@ class ParsedMatchReportStageScore:
         return await info.context.data_loaders.stage.load(self.stage_id)
 
     @classmethod
-    def from_orm(cls, stage_score: models.MatchReportStageScore):
+    def from_orm(cls, stage_score: models.MatchReportStageScore) -> "ParsedMatchReportStageScore":
         return cls(
             id=strawberry.ID(str(stage_score.id)),
             match_id=strawberry.ID(str(stage_score.match_id)),
