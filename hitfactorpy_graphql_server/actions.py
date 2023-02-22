@@ -21,7 +21,7 @@ async def get_match_report_summaries(
 ) -> list[models.MatchReport]:
     stmt = select_match_report_summaries()
     if id_in:
-        stmt = stmt.filter(models.MatchReport.id.in_(id_in))
+        stmt = stmt.filter(models.MatchReport.id.in_(id_in))  # type: ignore
     result = await db.execute(stmt)
     return cast(list[models.MatchReport], result.scalars().all())
 
@@ -31,7 +31,7 @@ async def get_stage_scores(
 ) -> list[models.MatchReportStageScore]:
     stmt = select(models.MatchReportStageScore)
     if id_in:
-        stmt = stmt.filter(models.MatchReportStageScore.id.in_(id_in))
+        stmt = stmt.filter(models.MatchReportStageScore.id.in_(id_in))  # type: ignore
     result = await db.execute(stmt)
     return cast(list[models.MatchReportStageScore], result.scalars().all())
 
@@ -39,18 +39,20 @@ async def get_stage_scores(
 async def get_competitors(
     db: AsyncSession, id_in: list[UUID | str] | None = None
 ) -> list[models.MatchReportCompetitor]:
-    stmt = select(models.MatchReportCompetitor).options(
+    stmt = select(models.MatchReportCompetitor).options(  # type: ignore
         selectinload(models.MatchReportCompetitor.stage_scores).load_only("id")
     )
     if id_in:
-        stmt = stmt.filter(models.MatchReportCompetitor.id.in_(id_in))
+        stmt = stmt.filter(models.MatchReportCompetitor.id.in_(id_in))  # type: ignore
     result = await db.execute(stmt)
     return cast(list[models.MatchReportCompetitor], result.scalars().all())
 
 
 async def get_stages(db: AsyncSession, id_in: list[UUID | str] | None = None) -> list[models.MatchReportStage]:
-    stmt = select(models.MatchReportStage).options(selectinload(models.MatchReportStage.stage_scores).load_only("id"))
+    stmt = select(models.MatchReportStage).options(  # type: ignore
+        selectinload(models.MatchReportStage.stage_scores).load_only("id"),
+    )
     if id_in:
-        stmt = stmt.filter(models.MatchReportStage.id.in_(id_in))
+        stmt = stmt.filter(models.MatchReportStage.id.in_(id_in))  # type: ignore
     result = await db.execute(stmt)
     return cast(list[models.MatchReportStage], result.scalars().all())

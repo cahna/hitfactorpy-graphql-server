@@ -38,9 +38,9 @@ def get_query_statement(db_baseclass_name, info: Info[HitFactorRequestContext, A
     selection_info = get_selection_info(db_baseclass_name, info)
     stmt = select(db_baseclass_name)
     if selection_info.columns:
-        stmt = stmt.options(load_only(*selection_info.columns))
+        stmt = stmt.options(load_only(*selection_info.columns))  # type: ignore
     if selection_info.relationships:
         for relation_field in selection_info.relationships:
-            stmt = stmt.options(selectinload(relation_field))
+            stmt = stmt.options(selectinload(relation_field))  # type: ignore
 
     return stmt
