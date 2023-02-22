@@ -1,3 +1,4 @@
+from typing import cast
 from uuid import UUID
 
 from hitfactorpy_sqlalchemy.orm import models
@@ -22,7 +23,7 @@ async def get_match_report_summaries(
     if id_in:
         stmt = stmt.filter(models.MatchReport.id.in_(id_in))
     result = await db.execute(stmt)
-    return result.scalars().all()
+    return cast(list[models.MatchReport], result.scalars().all())
 
 
 async def get_stage_scores(
@@ -32,7 +33,7 @@ async def get_stage_scores(
     if id_in:
         stmt = stmt.filter(models.MatchReportStageScore.id.in_(id_in))
     result = await db.execute(stmt)
-    return result.scalars().all()
+    return cast(list[models.MatchReportStageScore], result.scalars().all())
 
 
 async def get_competitors(
@@ -44,7 +45,7 @@ async def get_competitors(
     if id_in:
         stmt = stmt.filter(models.MatchReportCompetitor.id.in_(id_in))
     result = await db.execute(stmt)
-    return result.scalars().all()
+    return cast(list[models.MatchReportCompetitor], result.scalars().all())
 
 
 async def get_stages(db: AsyncSession, id_in: list[UUID | str] | None = None) -> list[models.MatchReportStage]:
@@ -52,4 +53,4 @@ async def get_stages(db: AsyncSession, id_in: list[UUID | str] | None = None) ->
     if id_in:
         stmt = stmt.filter(models.MatchReportStage.id.in_(id_in))
     result = await db.execute(stmt)
-    return result.scalars().all()
+    return cast(list[models.MatchReportStage], result.scalars().all())

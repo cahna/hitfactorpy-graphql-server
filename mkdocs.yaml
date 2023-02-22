@@ -1,0 +1,51 @@
+site_name: hitfactorpy_graphql_server
+site_description: hitfactorpy_graphql_server
+site_url: https://localhost/
+
+theme:
+  name: 'material'
+  palette:
+    primary: 'blue'
+    accent: 'red'
+  # logo: 'img/icon-white.svg'
+  # favicon: 'img/favicon.png'
+
+repo_name: cahna/hitfactorpy_graphql_server
+repo_url: https://github.com/cahna/hitfactorpy_graphql_server
+
+nav:
+  - Introduction: 'index.md'
+  - CLI: 'cli.md'
+  - Developer Guide:
+      - Linux+Pyenv: linux-setup.md
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - markdown.extensions.codehilite:
+      guess_lang: false
+  - markdown_include.include:
+      base_path: docs
+  - admonition
+  - codehilite
+  - extra
+  - tables
+  - smarty
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format ''
+  - pymdownx.tabbed:
+      alternate_style: true
+  - mdx_include:
+      base_path: docs
+
+extra_css:
+  - css/termynal.css
+  - css/custom.css
+
+extra_javascript:
+  - https://unpkg.com/mermaid@8.4.6/dist/mermaid.min.js
+  - js/termynal.js
+  - js/custom.js
